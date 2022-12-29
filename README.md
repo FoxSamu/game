@@ -7,7 +7,7 @@ To get a game up and running, three steps are needed:
 2. Create an instance of your game class
 3. Call `run()` on your game instance
 
-To stop the game, call `stop()`
+To stop the game, call `stop()`.
 
 ## Lifecycles
 Game components and the game itself use lifecycles, which consist of three phases: "init", "update" and "cleanup".
@@ -100,3 +100,15 @@ The `net.shadew.game.GameDebugListener` has various methods that are called at m
 process. By default, the game calls them on a no-op implementation. The listener can be set to a custom implementation,
 for example for logging. It is possible to set watchpoints on the methods of the interface to pause execution in the
 debugger at those points - no custom implementation needs to be set for this.
+
+# Download
+The artifact is available on my Maven:
+```groovy
+repositories {
+    maven { url "https://maven.shadew.net/" }
+}
+
+dependencies {
+    implementation "net.shadew:game:1.0"
+}
+```
