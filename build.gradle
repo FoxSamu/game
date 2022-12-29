@@ -1,9 +1,10 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
 }
 
-group 'samu'
-version '1.0-SNAPSHOT'
+group 'net.shadew'
+version '1.0'
 
 repositories {
     mavenCentral()
@@ -16,4 +17,38 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+task sourceJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar) {
+    classifier 'javadoc'
+    from javadoc
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = project.group
+            artifactId = 'game'
+            version = project.version
+
+            from components.java
+            artifact tasks.sourceJar
+            artifact tasks.javadocJar
+        }
+    }
+    repositories {
+        maven {
+            name = "ShwMaven"
+            url = uri("https://maven.shadew.net/")
+            credentials {
+                username = shwMavenUser
+                password = shwMavenPass
+            }
+        }
+    }
 }
