@@ -4,6 +4,7 @@ public class Loop {
     private final Lifecycle life;
     private SyncService sync;
     private ExceptionHandler exceptionHandler;
+    private GameDebugListener gameDebug = GameDebugListener.NOOP;
 
     private long startTime;
     private long frameStart;
@@ -23,6 +24,10 @@ public class Loop {
 
     public void sync(SyncService sync) {
         this.sync = sync;
+    }
+
+    public GameDebugListener gameDebug() {
+        return gameDebug;
     }
 
     public boolean alive() {
@@ -83,7 +88,10 @@ public class Loop {
             frameStart = time;
             try {
                 life.update();
+
+                gameDebug.beforeSync();
                 sync.sync();
+                gameDebug.afterSync();
             } catch (Throwable thr) {
                 if (exceptionHandler == null) throw thr;
                 exceptionHandler.onException(thr, LifecyclePhase.UPDATE);

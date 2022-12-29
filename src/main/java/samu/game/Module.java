@@ -15,6 +15,11 @@ public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable
         this.game = game;
     }
 
+    public Module(String id, G game) {
+        this.id = new NSID(id);
+        this.game = game;
+    }
+
     public final void dependsOn(NSID module) {
         this.after.put(module, Relation.REQUIRED);
     }
@@ -23,12 +28,28 @@ public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable
         this.after.put(module, r);
     }
 
+    public final void dependsOn(String module) {
+        dependsOn(new NSID(module));
+    }
+
+    public final void dependsOn(String module, Relation r) {
+        dependsOn(new NSID(module), r);
+    }
+
     public final void finalizedBy(NSID module) {
         this.before.put(module, Relation.REQUIRED);
     }
 
     public final void finalizedBy(NSID module, Relation r) {
         this.before.put(module, r);
+    }
+
+    public final void finalizedBy(String module) {
+        finalizedBy(new NSID(module));
+    }
+
+    public final void finalizedBy(String module, Relation r) {
+        finalizedBy(new NSID(module), r);
     }
 
     public final NSID id() {
@@ -83,6 +104,7 @@ public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable
 
     @Override
     public void onException(Throwable exc, LifecyclePhase phase) {
-        game.onException(new ModuleException(this, exc), phase);
+        ErrorReport report = ErrorReport.of(exc).addContext(ErrorContext.in(this, phase));
+        game.onException(report, phase);
     }
 }

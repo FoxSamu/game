@@ -72,6 +72,7 @@ public abstract class Service<G extends Game<G>> implements Lifecycle, Signalabl
 
     @Override
     public void onException(Throwable exc, LifecyclePhase phase) {
-        game.onException(new ServiceException(this, exc), phase);
+        ErrorReport report = ErrorReport.of(exc).addContext(ErrorContext.in(this, phase));
+        game.onException(report, phase);
     }
 }

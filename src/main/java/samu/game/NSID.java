@@ -5,8 +5,15 @@ import java.util.regex.Pattern;
 
 public record NSID(String ns, String id) implements Comparable<NSID> {
     public static final Comparator<NSID> COMPARATOR = Comparator.comparing(NSID::ns).thenComparing(NSID::id);
+    private static final String DEFNS = DefaultNamespace.defNs;
     private static final Pattern NS_PATTERN = Pattern.compile("[a-z0-9_]+");
     private static final Pattern ID_PATTERN = Pattern.compile("[a-z0-9./_\\-]+");
+
+    static {
+        if (!checkNs(DEFNS)) {
+            throw new RuntimeException("Default namespace is not valid");
+        }
+    }
 
     public NSID {
         if (!checkNs(ns))
@@ -42,7 +49,11 @@ public record NSID(String ns, String id) implements Comparable<NSID> {
 
     private static String[] parse(String nsid) {
         int i = nsid.indexOf(':');
-        if (i < 0) throw new IllegalArgumentException("NSID has no : symbol");
+        if (i < 0) {
+            if (DEFNS == null)
+                throw new IllegalArgumentException("NSID has no : symbol");
+            return new String[] {DEFNS, nsid};
+        }
         return new String[] {nsid.substring(0, i), nsid.substring(i + 1)};
     }
 

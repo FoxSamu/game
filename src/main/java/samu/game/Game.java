@@ -20,6 +20,7 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
     private final Set<Service<? extends G>> newServices = new HashSet<>();
     private final Set<Service<? extends G>> oldServices = new HashSet<>();
 
+    private GameDebugListener debug = GameDebugListener.NOOP;
 
     public Game() {
         loop.exceptionHandler(this);
@@ -145,7 +146,12 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
      */
     protected final void sync(SyncService service) {
         if (service == null) throw new NullPointerException("Null SyncService");
+
         loop.sync(service);
+    }
+
+    protected void debug(GameDebugListener debug) {
+        this.debug = debug == null ? GameDebugListener.NOOP : debug;
     }
 
     /**
@@ -155,16 +161,25 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
     public final void emit(Signal signal) {
         if (signal == null) throw new NullPointerException("Null Signal");
 
+        debug.beforeSignal(signal);
+        debug.gameBeforeSignal(signal);
         signal(signal);
+        debug.gameAfterSignal(signal);
 
         for (Module<?> m : modules) {
+            debug.moduleBeforeSignal(m, signal);
             m.signal(signal);
+            debug.moduleAfterSignal(m, signal);
         }
 
         for (Service<? extends G> s : services.values()) {
-            if (!newServices.contains(s) && !oldServices.contains(s))
+            if (!newServices.contains(s) && !oldServices.contains(s)) {
+                debug.serviceBeforeSignal(s, signal);
                 s.signal(signal);
+                debug.serviceAfterSignal(s, signal);
+            }
         }
+        debug.afterSignal(signal);
     }
 
     /**
@@ -172,6 +187,8 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
      */
     @Override
     public void startService(Service<? extends G> service) {
+        debug.serviceStarts(service);
+
         NSID id = service.id();
         if (services.containsKey(id)) {
             throw new RuntimeException("Service " + id + " is already running");
@@ -196,6 +213,7 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
         if (!services.containsKey(id)) {
             return false;
         }
+        debug.serviceStops(services.get(id));
 
         return oldServices.add(services.remove(id));
     }
@@ -233,21 +251,24 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
      */
     @Override
     public void onException(Throwable exc, LifecyclePhase phase) {
-        exc.printStackTrace();
+        if (exc instanceof ErrorReport er) {
+            handleReport(er);
+        } else {
+            handleReport(ErrorReport.of(exc));
+        }
 
-        if (isFatalException(exc)) {
+        if (GameException.isFatalException(exc)) {
             stop();
         }
     }
 
     /**
-     * Check if the given exception is fatal, which usually means that the game should stop.
+     * Handle an error report.
      *
-     * @param exc The exception
-     * @return True if it is fatal
+     * @param report The report
      */
-    protected boolean isFatalException(Throwable exc) {
-        return exc instanceof Error || exc instanceof GameException e && e.fatal();
+    protected void handleReport(ErrorReport report) {
+        report.print("Error report");
     }
 
     /**
@@ -325,6 +346,7 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
     private class GameLife implements Lifecycle {
         @Override
         public void init() {
+            debug.beforeModuleSorting();
             moduleSorter.sort();
             if (!missingModules.isEmpty()) {
                 handleMissingModules(missingModules);
@@ -332,23 +354,33 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
             if (!circularlyDependentModules.isEmpty()) {
                 handleCircularDependencies(circularlyDependentModules);
             }
+            debug.afterModuleSorting();
 
+            debug.beforeInit();
+            debug.gameBeforeInit();
             Game.this.init();
+            debug.gameAfterInit();
 
             for (Module<? extends G> m : modules) {
                 try {
+                    debug.moduleBeforeInit(m);
                     m.init();
+                    debug.moduleAfterInit(m);
                 } catch (Throwable thr) {
                     m.onException(thr, LifecyclePhase.INIT);
                 }
             }
+            debug.afterInit();
         }
 
         @Override
         public void cleanup() {
+            debug.beforeCleanup();
             for (Service<? extends G> s : services.values()) {
                 try {
+                    debug.serviceBeforeCleanup(s);
                     s.cleanup();
+                    debug.serviceAfterCleanup(s);
                 } catch (Throwable thr) {
                     s.onException(thr, LifecyclePhase.CLEANUP);
                 }
@@ -356,7 +388,9 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
 
             for (Service<? extends G> s : services.values()) {
                 try {
+                    debug.serviceBeforeAwaitFinish(s);
                     s.awaitFinish();
+                    debug.serviceAfterAwaitFinish(s);
                 } catch (Throwable thr) {
                     s.onException(thr, LifecyclePhase.CLEANUP);
                 }
@@ -365,22 +399,32 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
             for (int i = modules.size() - 1; i >= 0; i--) {
                 Module<? extends G> m = modules.get(i);
                 try {
+                    debug.moduleBeforeCleanup(m);
                     m.cleanup();
+                    debug.moduleAfterCleanup(m);
                 } catch (Throwable thr) {
                     m.onException(thr, LifecyclePhase.CLEANUP);
                 }
             }
 
+            debug.gameBeforeCleanup();
             Game.this.cleanup();
+            debug.gameAfterCleanup();
+            debug.afterCleanup();
         }
 
         @Override
         public void update() {
+            debug.beforeUpdate();
+            debug.gameBeforeUpdate();
             Game.this.update();
+            debug.gameAfterUpdate();
 
             for (Module<? extends G> m : modules) {
                 try {
+                    debug.moduleBeforeUpdate(m);
                     m.update();
+                    debug.moduleAfterUpdate(m);
                 } catch (Throwable thr) {
                     m.onException(thr, LifecyclePhase.UPDATE);
                 }
@@ -388,7 +432,9 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
 
             for (Service<? extends G> s : services.values()) {
                 try {
+                    debug.serviceBeforeUpdate(s);
                     s.update();
+                    debug.serviceAfterUpdate(s);
                 } catch (Throwable thr) {
                     s.onException(thr, LifecyclePhase.UPDATE);
                 }
@@ -396,7 +442,9 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
 
             for (Service<? extends G> s : newServices) {
                 try {
+                    debug.serviceBeforeInit(s);
                     s.init();
+                    debug.serviceAfterInit(s);
                 } catch (Throwable thr) {
                     s.onException(thr, LifecyclePhase.INIT);
                 }
@@ -405,12 +453,15 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
 
             for (Service<? extends G> s : oldServices) {
                 try {
+                    debug.serviceBeforeCleanup(s);
                     s.cleanup();
+                    debug.serviceAfterCleanup(s);
                 } catch (Throwable thr) {
                     s.onException(thr, LifecyclePhase.CLEANUP);
                 }
             }
             oldServices.clear();
+            debug.afterUpdate();
         }
     }
 }

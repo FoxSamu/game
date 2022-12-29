@@ -1,9 +1,9 @@
 package samu.game;
 
 public class TestGame extends Game<TestGame> {
-    private final TestModule module1 = addModule(new TestModule(new NSID("test:module1"), this));
-    private final TestModule module2 = addModule(new TestModule(new NSID("test:module2"), this));
-    private final TestModule module3 = addModule(new TestModule(new NSID("test:module3"), this));
+    private final TestModule module1 = addModule(new TestModule(new NSID("module1"), this));
+    private final TestModule module2 = addModule(new TestModule(new NSID("module2"), this));
+    private final TestModule module3 = addModule(new TestModule(new NSID("module3"), this));
 
     public TestGame() {
         sync(new ClockSync(2000));
@@ -29,6 +29,7 @@ public class TestGame extends Game<TestGame> {
     }
 
     public static void main(String[] args) {
+        DefaultNamespace.set("test");
         new TestGame().run();
     }
 }

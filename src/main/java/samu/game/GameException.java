@@ -1,7 +1,7 @@
 package samu.game;
 
 public class GameException extends RuntimeException {
-    private final boolean fatal;
+    private boolean fatal;
 
     public GameException() {
         this(false, null, null);
@@ -37,7 +37,21 @@ public class GameException extends RuntimeException {
         this.fatal = fatal;
     }
 
+    /**
+     * Check if the given exception is fatal, which usually means that the game should stop.
+     *
+     * @param exc The exception
+     * @return True if it is fatal
+     */
+    public static boolean isFatalException(Throwable exc) {
+        return exc instanceof Error || exc instanceof GameException e && e.fatal();
+    }
+
     public boolean fatal() {
         return fatal;
+    }
+
+    public void fatal(boolean fatal) {
+        this.fatal = fatal;
     }
 }
