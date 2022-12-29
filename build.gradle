@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
 }
 
-group 'net.shadew'
+group 'samu'
 version '1.0-SNAPSHOT'
 
 repositories {

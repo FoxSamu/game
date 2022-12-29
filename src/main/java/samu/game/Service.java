@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 public abstract class Service<G extends Game<G>> implements Lifecycle, Signalable, ExceptionHandler, GameContext<G> {
     protected final NSID id;

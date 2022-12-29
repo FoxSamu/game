@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 public class ModuleException extends GameException {
     private final Module<?> module;

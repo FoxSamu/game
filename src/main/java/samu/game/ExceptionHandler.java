@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 /**
  * A handler for exceptions that occur during a lifecycle.

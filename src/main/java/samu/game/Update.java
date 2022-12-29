@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 /**
  * Something that receives updates during its lifetime.

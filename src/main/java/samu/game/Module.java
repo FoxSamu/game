@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 /**
  * Something that needs to be cleaned up after its lifetime.

@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;

@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 /**
  * An object that has to be initialized and cleaned up. It consists of {@link Init} and {@link Cleanup}.

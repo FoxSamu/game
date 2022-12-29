@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 import java.util.*;
 
@@ -11,6 +11,7 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
     private final Map<NSID, Module<? extends G>> modulesById = new HashMap<>();
     private final ModuleSorter<G> moduleSorter = new ModuleSorter<>(modulesById);
     private final List<Module<? extends G>> modules = Collections.unmodifiableList(moduleSorter.modules());
+    private final Set<NSID> circularlyDependentModules = Collections.unmodifiableSet(moduleSorter.circularDependencies());
     private final Set<NSID> missingModules = Collections.unmodifiableSet(moduleSorter.missing());
     private final Set<NSID> optMissingModules = Collections.unmodifiableSet(moduleSorter.optMissing());
     private final Set<NSID> loadedModules = Collections.unmodifiableSet(moduleSorter.loaded());
@@ -250,6 +251,17 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
     }
 
     /**
+     * Get a set of  module IDs that were in some way dependent on themselves, which is updated on initialization. If
+     * this is not empty, the game should likely stop and it will throw a fatal {@link GameException} before calling any
+     * initialization method. The set is sorted by the natural ordering of {@link NSID}s.
+     *
+     * @return The set of circularly dependent module IDs
+     */
+    public Set<NSID> circularlyDependentModules() {
+        return circularlyDependentModules;
+    }
+
+    /**
      * Get a set of missing module IDs that were required by other modules, which is updated on initialization. If this
      * is not empty, the game should likely stop and it will throw a fatal {@link GameException} before calling any
      * initialization method. The set is sorted by the natural ordering of {@link NSID}s.
@@ -299,12 +311,26 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
         throw new GameException(true, "The following modules were required by other modules, but could not be found: " + moduleSorter.missing());
     }
 
+    /**
+     * Called before initialization when circular dependencies were found. Default action throws a {@link GameException}
+     * with the {@link GameException#fatal()} flag set.
+     *
+     * @param cdms The set of Circularly Dependent Modules (CDMs), as returned by
+     *             {@link #circularlyDependentModules()}.
+     */
+    protected void handleCircularDependencies(Set<NSID> cdms) {
+        throw new GameException(true, "The following modules were dependent on themselves: " + moduleSorter.missing());
+    }
+
     private class GameLife implements Lifecycle {
         @Override
         public void init() {
             moduleSorter.sort();
-            if (!moduleSorter.missing().isEmpty()) {
+            if (!missingModules.isEmpty()) {
                 handleMissingModules(missingModules);
+            }
+            if (!circularlyDependentModules.isEmpty()) {
+                handleCircularDependencies(circularlyDependentModules);
             }
 
             Game.this.init();

@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 public class TestModule extends Module<TestGame> {
     public TestModule(NSID id, TestGame game) {

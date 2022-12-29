@@ -1,9 +1,10 @@
-package net.shadew.game;
+package samu.game;
 
 import java.util.*;
 
 class ModuleSorter<G extends Game<G>> {
     private final Map<Module<? extends G>, List<Module<? extends G>>> relations = new HashMap<>();
+    private final Set<NSID> circularDependencies = new TreeSet<>();
     private final Set<NSID> missing = new TreeSet<>();
     private final Set<NSID> optMissing = new TreeSet<>();
     private final Set<NSID> loaded = new TreeSet<>();
@@ -70,8 +71,12 @@ class ModuleSorter<G extends Game<G>> {
             if (rels != null) {
                 for (Module<? extends G> rel : rels) {
                     if (toBeAdded.contains(rel)) {
-                        stack.push(rel);
-                        canAdd = false;
+                        if (stack.contains(rel)) {
+                            circularDependencies.add(rel.id());
+                        } else {
+                            stack.push(rel);
+                            canAdd = false;
+                        }
                     }
                 }
             }
@@ -91,6 +96,10 @@ class ModuleSorter<G extends Game<G>> {
         modules.clear();
         setupRelations();
         reorder();
+    }
+
+    Set<NSID> circularDependencies() {
+        return circularDependencies;
     }
 
     Set<NSID> missing() {

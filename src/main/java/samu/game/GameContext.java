@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 public interface GameContext<G extends Game<G>> {
     G game();

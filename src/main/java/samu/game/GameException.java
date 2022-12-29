@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 public class GameException extends RuntimeException {
     private final boolean fatal;

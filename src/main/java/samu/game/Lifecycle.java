@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 /**
  * A lifecycle is a {@link Lifetime} that also receives updates. It consists of {@link Init}, {@link Update} and

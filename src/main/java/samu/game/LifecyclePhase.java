@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 public enum LifecyclePhase {
     INIT,

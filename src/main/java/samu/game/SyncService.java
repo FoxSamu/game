@@ -1,4 +1,4 @@
-package net.shadew.game;
+package samu.game;
 
 /**
  * Synchronizes an update loop to some clock.
