@@ -1,6 +1,6 @@
 package net.shadew.game;
 
-public class TestGame extends Game {
+public class TestGame extends Game<TestGame> {
     private final TestModule module = addModule(new TestModule(new NSID("test:module"), this));
 
     public TestGame() {

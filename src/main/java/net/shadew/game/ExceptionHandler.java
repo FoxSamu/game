@@ -1,5 +1,14 @@
 package net.shadew.game;
 
-public interface ExceptionHandler<S> {
-    void onException(Throwable exc, S source);
+/**
+ * A handler for exceptions that occur during a lifecycle.
+ */
+public interface ExceptionHandler {
+    /**
+     * Handles an exception.
+     *
+     * @param exc   The exception
+     * @param phase The lifecycle phase
+     */
+    void onException(Throwable exc, LifecyclePhase phase);
 }

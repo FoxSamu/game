@@ -1,10 +1,10 @@
 package net.shadew.game;
 
-public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable, ExceptionHandler, GameContext<G> {
+public abstract class Service<G extends Game<G>> implements Lifecycle, Signalable, ExceptionHandler, GameContext<G> {
     protected final NSID id;
     protected final G game;
 
-    public Module(NSID id, G game) {
+    public Service(NSID id, G game) {
         this.id = id;
         this.game = game;
     }
@@ -43,6 +43,14 @@ public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable
         return game.stopService(nsid);
     }
 
+    public void start() {
+        game.startService(this);
+    }
+
+    public boolean stop() {
+        return game.stopService(this);
+    }
+
     @Override
     public void init() {
     }
@@ -55,12 +63,15 @@ public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable
     public void cleanup() {
     }
 
+    public void awaitFinish() {
+    }
+
     @Override
     public void signal(Signal signal) {
     }
 
     @Override
     public void onException(Throwable exc, LifecyclePhase phase) {
-        game.onException(new ModuleException(this, exc), phase);
+        game.onException(new ServiceException(this, exc), phase);
     }
 }

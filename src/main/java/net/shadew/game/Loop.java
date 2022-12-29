@@ -3,7 +3,7 @@ package net.shadew.game;
 public class Loop {
     private final Lifecycle life;
     private SyncService sync;
-    private ExceptionHandler<LifecyclePhase> exceptionHandler;
+    private ExceptionHandler exceptionHandler;
 
     private long startTime;
     private long frameStart;
@@ -41,6 +41,10 @@ public class Loop {
         return frameTime;
     }
 
+    public float dt() {
+        return frameTime / 1000F;
+    }
+
     public float fps() {
         return fps;
     }
@@ -57,7 +61,7 @@ public class Loop {
         return frameStart - startTime;
     }
 
-    public void exceptionHandler(ExceptionHandler<LifecyclePhase> exceptionHandler) {
+    public void exceptionHandler(ExceptionHandler exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
     }
 
