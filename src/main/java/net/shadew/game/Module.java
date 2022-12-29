@@ -1,12 +1,34 @@
 package net.shadew.game;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class Module<G extends Game<G>> implements Lifecycle, Signalable, ExceptionHandler, GameContext<G> {
     protected final NSID id;
     protected final G game;
 
+    final Map<NSID, Relation> before = new HashMap<>();
+    final Map<NSID, Relation> after = new HashMap<>();
+
     public Module(NSID id, G game) {
         this.id = id;
         this.game = game;
+    }
+
+    public final void dependsOn(NSID module) {
+        this.after.put(module, Relation.REQUIRED);
+    }
+
+    public final void dependsOn(NSID module, Relation r) {
+        this.after.put(module, r);
+    }
+
+    public final void finalizedBy(NSID module) {
+        this.before.put(module, Relation.REQUIRED);
+    }
+
+    public final void finalizedBy(NSID module, Relation r) {
+        this.before.put(module, r);
     }
 
     public final NSID id() {

@@ -8,12 +8,17 @@ import java.util.*;
 public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, ExceptionHandler, GameContext<G> {
     private final Loop loop = new Loop(new GameLife());
 
-    private final List<Module<? extends G>> modules = new ArrayList<>();
     private final Map<NSID, Module<? extends G>> modulesById = new HashMap<>();
+    private final ModuleSorter<G> moduleSorter = new ModuleSorter<>(modulesById);
+    private final List<Module<? extends G>> modules = Collections.unmodifiableList(moduleSorter.modules());
+    private final Set<NSID> missingModules = Collections.unmodifiableSet(moduleSorter.missing());
+    private final Set<NSID> optMissingModules = Collections.unmodifiableSet(moduleSorter.optMissing());
+    private final Set<NSID> loadedModules = Collections.unmodifiableSet(moduleSorter.loaded());
 
     private final Map<NSID, Service<? extends G>> services = new HashMap<>();
     private final Set<Service<? extends G>> newServices = new HashSet<>();
     private final Set<Service<? extends G>> oldServices = new HashSet<>();
+
 
     public Game() {
         loop.exceptionHandler(this);
@@ -31,7 +36,6 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
         if (modulesById.containsKey(module.id()))
             throw new IllegalArgumentException("Module " + module.id() + " already added");
 
-        modules.add(module);
         modulesById.put(module.id(), module);
         return module;
     }
@@ -245,9 +249,64 @@ public abstract class Game<G extends Game<G>> implements Lifecycle, Signalable, 
         return exc instanceof Error || exc instanceof GameException e && e.fatal();
     }
 
+    /**
+     * Get a set of missing module IDs that were required by other modules, which is updated on initialization. If this
+     * is not empty, the game should likely stop and it will throw a fatal {@link GameException} before calling any
+     * initialization method. The set is sorted by the natural ordering of {@link NSID}s.
+     *
+     * @return The set of missing module IDs
+     */
+    protected final Set<NSID> missingModules() {
+        return missingModules;
+    }
+
+    /**
+     * Get a set of missing module IDs that were optionally needed by other modules, which is updated on initialization.
+     * The set is sorted by the natural ordering of {@link NSID}s.
+     *
+     * @return The set of missing module IDs
+     */
+    protected final Set<NSID> optMissingModules() {
+        return optMissingModules;
+    }
+
+    /**
+     * Get a set of module IDs that were loaded, which is updated on initialization. The set is sorted by the natural
+     * ordering of {@link NSID}s.
+     *
+     * @return The set of loaded module IDs
+     */
+    public Set<NSID> loadedModules() {
+        return loadedModules;
+    }
+
+    /**
+     * Get a list of modules in order of dependency.
+     *
+     * @return The list of modules
+     */
+    public List<Module<? extends G>> modules() {
+        return modules;
+    }
+
+    /**
+     * Called before initialization when required dependencies of some modules were not found. Default action throws a
+     * {@link GameException} with the {@link GameException#fatal()} flag set.
+     *
+     * @param missing The set of missing modules, as returned by {@link #missingModules()}.
+     */
+    protected void handleMissingModules(Set<NSID> missing) {
+        throw new GameException(true, "The following modules were required by other modules, but could not be found: " + moduleSorter.missing());
+    }
+
     private class GameLife implements Lifecycle {
         @Override
         public void init() {
+            moduleSorter.sort();
+            if (!moduleSorter.missing().isEmpty()) {
+                handleMissingModules(missingModules);
+            }
+
             Game.this.init();
 
             for (Module<? extends G> m : modules) {
